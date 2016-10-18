@@ -15,10 +15,10 @@ public class modifyAction extends ActionSupport {
 	public static Reader reader;
 	public static SqlMapClient sqlMapper;
 
-	private boardVO paramClass; //�Ķ���͸� ������ ��ü
-	private boardVO resultClass; //���� ��� ���� ������ ��ü
+	private boardVO paramClass; //파라미터를 저장할 객체
+	private boardVO resultClass; //쿼리 결과 값을 저장할 객체
 
-	private int currentPage;	//���� ������
+	private int currentPage;	//현재 페이지
 	
 	private int no;
 	private String subject;
@@ -27,60 +27,60 @@ public class modifyAction extends ActionSupport {
 	private String content;
 	private String old_file;
 
-	private File upload; //���� ��ü
-	private String uploadContentType; //������ Ÿ��
-	private String uploadFileName; //���� �̸�
-	private String fileUploadPath = "f:\\save\\"; //���ε� ���.
+	private File upload; //파일 객체
+	private String uploadContentType; //컨텐츠 타입
+	private String uploadFileName; //파일 이름
+	private String fileUploadPath = "f:\\save\\"; //업로드 경로.
 
-	// ������
+	// 생성자
 	public modifyAction() throws IOException {
 		
-		reader = Resources.getResourceAsReader("sqlMapConfig.xml"); // sqlMapConfig.xml ������ ���������� �����´�.
-		sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader); // sqlMapConfig.xml�� ������ ������ sqlMapper ��ü ����.
+		reader = Resources.getResourceAsReader("sqlMapConfig.xml"); // sqlMapConfig.xml 파일의 설정내용을 가져온다.
+		sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader); // sqlMapConfig.xml의 내용을 적용한 sqlMapper 객체 생성.
 		reader.close();
 	}
 
-	// �Խñ� ����
+	// 게시글 수정
 	public String execute() throws Exception {
 		
-		//�Ķ���Ϳ� ����Ʈ ��ü ����.
+		//파라미터와 리절트 객체 생성.
 		paramClass = new boardVO();
 		resultClass = new boardVO();
 
-		// ������ �׸� ����.
+		// 수정할 항목 설정.
 		paramClass.setNo(getNo());
 		paramClass.setSubject(getSubject());
 		paramClass.setName(getName());
 		paramClass.setPassword(getPassword());
 		paramClass.setContent(getContent());
 
-		// �ϴ� �׸� �����Ѵ�.
+		// 일단 항목만 수정한다.
 		sqlMapper.update("updateBoard", paramClass);
 
-		// ������ ������ ���ε� �Ǿ��ٸ� ������ ���ε��ϰ� DB�� file �׸��� ������.
+		// 수정할 파일이 업로드 되었다면 파일을 업로드하고 DB의 file 항목을 수정함.
 		if (getUpload() != null) {
 			
-			//���� ������ ����� ���� �̸��� Ȯ���� ����.
+			//실제 서버에 저장될 파일 이름과 확장자 설정.
 			String file_name = "file_" + getNo();
 		           String file_ext = getUploadFileName().substring(getUploadFileName().lastIndexOf('.')+1,getUploadFileName().length());
 			
-			//���� ���� ����
+			//이전 파일 삭제
 			File deleteFile = new File(fileUploadPath + getOld_file());
 			deleteFile.delete();
 			
-			//�� ���� ���ε�
+			//새 파일 업로드
 			File destFile = new File(fileUploadPath + file_name + "." + file_ext);
 			FileUtils.copyFile(getUpload(), destFile);
 			
-			//���� ���� �Ķ���� ����.
+			//파일 정보 파라미터 설정.
 			paramClass.setFile_orgname(getUploadFileName());
 			paramClass.setFile_savname(file_name + "." + file_ext);
 			
-			//���� ���� ������Ʈ.
+			//파일 정보 업데이트.
 			sqlMapper.update("updateFile", paramClass);
 		}
 
-		// ������ ������ view �������� �̵�.
+		// 수정이 끝나면 view 페이지로 이동.
 		resultClass = (boardVO) sqlMapper.queryForObject("selectOne", getNo());
 
 		return SUCCESS;

@@ -14,81 +14,81 @@ import org.apache.commons.io.FileUtils;
 
 public class writeAction extends ActionSupport {
 
-	public static Reader reader; //���� ��Ʈ���� ���� reader.
-	public static SqlMapClient sqlMapper; //SqlMapClient API�� ����ϱ� ���� sqlMapper ��ü.
+	public static Reader reader; //파일 스트림을 위한 reader.
+	public static SqlMapClient sqlMapper; //SqlMapClient API를 사용하기 위한 sqlMapper 객체.
 
-	private boardVO paramClass; //�Ķ���͸� ������ ��ü
-	private boardVO resultClass; //���� ��� ���� ������ ��ü
+	private boardVO paramClass; //파라미터를 저장할 객체
+	private boardVO resultClass; //쿼리 결과 값을 저장할 객체
 
-	private int currentPage; //���� ������
+	private int currentPage; //현재 페이지
 
 	private int no;
 	private String subject;
 	private String name;
 	private String password;
 	private String content;
-	private String file_orgName; //���ε� ������ ���� �̸�
-	private String file_savName; //������ ������ ���ε� ������ �̸�. ���� ��ȣ�� �����Ѵ�.
-	Calendar today = Calendar.getInstance(); //���� ��¥ ���ϱ�.
+	private String file_orgName; //업로드 파일의 원래 이름
+	private String file_savName; //서버에 저장할 업로드 파일의 이름. 고유 번호로 구분한다.
+	Calendar today = Calendar.getInstance(); //오늘 날짜 구하기.
 
-	private File upload; //���� ��ü
-	private String uploadContentType; //������ Ÿ��
-	private String uploadFileName; //���� �̸�
-	private String fileUploadPath = "f:\\save\\"; //���ε� ���.
+	private File upload; //파일 객체
+	private String uploadContentType; //컨텐츠 타입
+	private String uploadFileName; //파일 이름
+	private String fileUploadPath = "f:\\save\\"; //업로드 경로.
 
-	// ������
+	// 생성자
 	public writeAction() throws IOException {
 
-		reader = Resources.getResourceAsReader("sqlMapConfig.xml"); // sqlMapConfig.xml ������ ���������� �����´�.
-		sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader); // sqlMapConfig.xml�� ������ ������ sqlMapper ��ü ����.
+		reader = Resources.getResourceAsReader("sqlMapConfig.xml"); // sqlMapConfig.xml 파일의 설정내용을 가져온다.
+		sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader); // sqlMapConfig.xml의 내용을 적용한 sqlMapper 객체 생성.
 		reader.close();
 	}
 
 	public String form() throws Exception {
-		//��� ��.
+		//등록 폼.
 		return SUCCESS;
 	}
 
-	// �Խ��� WRITE �׼�
+	// 게시판 WRITE 액션
 	public String execute() throws Exception {
 
-		//�Ķ���Ϳ� ����Ʈ ��ü ����.
+		//파라미터와 리절트 객체 생성.
 		paramClass = new boardVO();
 		resultClass = new boardVO();
 
-		// ����� �׸� ����.
+		// 등록할 항목 설정.
 		paramClass.setSubject(getSubject());
 		paramClass.setName(getName());
 		paramClass.setPassword(getPassword());
 		paramClass.setContent(getContent());
 		paramClass.setRegdate(today.getTime());
 
-		// ��� ���� ����.
+		// 등록 쿼리 수행.
 		sqlMapper.insert("insertBoard", paramClass);
 
-		// ÷�������� �����ߴٸ� ������ ���ε��Ѵ�.
+		// 첨부파일을 선택했다면 파일을 업로드한다.
 		if (getUpload() != null) {
 
-			//����� �� ��ȣ ��������.
+			//등록한 글 번호 가져오기.
 			resultClass = (boardVO) sqlMapper.queryForObject("selectLastNo");
 
-			//���� ������ ����� ���� �̸��� Ȯ���� ����.
+			//실제 서버에 저장될 파일 이름과 확장자 설정.
 			String file_name = "file_" + resultClass.getNo();
 			String file_ext = getUploadFileName().substring(
 					getUploadFileName().lastIndexOf('.') + 1,
 					getUploadFileName().length());
 
-			//������ ���� ����.
+			//서버에 파일 저장.
 			File destFile = new File(fileUploadPath + file_name + "."
 					+ file_ext);
 			FileUtils.copyFile(getUpload(), destFile);
 
-			//���� ���� �Ķ���� ����.
+			//파일 정보 파라미터 설정.
 			paramClass.setNo(resultClass.getNo());
-			paramClass.setFile_orgname(getUploadFileName());		//���� ���� �̸�
-			paramClass.setFile_savname(file_name + "." + file_ext);	//������ ������ ���� �̸�
+			paramClass.setFile_orgname(getUploadFileName());		//원래 파일 이름
+			paramClass.setFile_savname(file_name + "." + file_ext);	//서버에 저장한 파일 이름
 
-			//���� ���� ������Ʈ.
+			//파일 정보 업데이트.
 			sqlMapper.update("updateFile", paramClass);
 		}
 

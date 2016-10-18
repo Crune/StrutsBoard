@@ -17,8 +17,8 @@ public class viewAction extends ActionSupport {
 	public static Reader reader;
 	public static SqlMapClient sqlMapper;
 
-	private boardVO paramClass = new boardVO(); //�Ķ���͸� ������ ��ü
-	private boardVO resultClass = new boardVO(); //���� ��� ���� ������ ��ü
+	private boardVO paramClass = new boardVO(); //파라미터를 저장할 객체
+	private boardVO resultClass = new boardVO(); //쿼리 결과 값을 저장할 객체
 
 	private int currentPage;
 
@@ -31,37 +31,37 @@ public class viewAction extends ActionSupport {
 	private String contentDisposition;
 	private long contentLength;
 
-	// ������
+	// 생성자
 	public viewAction() throws IOException {
 
-		reader = Resources.getResourceAsReader("sqlMapConfig.xml"); // sqlMapConfig.xml ������ ���������� �����´�.
-		sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader); // sqlMapConfig.xml�� ������ ������ sqlMapper ��ü ����.
+		reader = Resources.getResourceAsReader("sqlMapConfig.xml"); // sqlMapConfig.xml 파일의 설정내용을 가져온다.
+		sqlMapper = SqlMapClientBuilder.buildSqlMapClient(reader); // sqlMapConfig.xml의 내용을 적용한 sqlMapper 객체 생성.
 		reader.close();
 	}
 
-	// �󼼺���
+	// 상세보기
 	public String execute() throws Exception {
 
-		// �ش� ���� ��ȸ�� +1.
+		// 해당 글의 조회수 +1.
 		paramClass.setNo(getNo());
 		sqlMapper.update("updateReadHit", paramClass);
 
-		// �ش� ��ȣ�� ���� �����´�.
+		// 해당 번호의 글을 가져온다.
 		resultClass = (boardVO) sqlMapper.queryForObject("selectOne", getNo());
 
 		return SUCCESS;
 	}
 
-	// ÷�� ���� �ٿ�ε�
+	// 첨부 파일 다운로드
 	public String download() throws Exception {
 
-		// �ش� ��ȣ�� ���� ������ �����´�.
+		// 해당 번호의 파일 정보를 가져온다.
 		resultClass = (boardVO) sqlMapper.queryForObject("selectOne", getNo());
 
-		// ���� ��ο� ���ϸ��� file ��ü�� �ִ´�.
+		// 파일 경로와 파일명을 file 객체에 넣는다.
 		File fileInfo = new File(fileUploadPath + resultClass.getFile_savname());
 
-		// �ٿ�ε� ���� ���� ����.
+		// 다운로드 파일 정보 설정.
 		setContentLength(fileInfo.length());
 		setContentDisposition("attachment;filename="
 				+ URLEncoder.encode(resultClass.getFile_orgname(), "UTF-8"));
@@ -71,24 +71,24 @@ public class viewAction extends ActionSupport {
 		return SUCCESS;
 	}
 
-	// ��й�ȣ üũ ��
+	// 비밀번호 체크 폼
 	public String checkForm() throws Exception {
 
 		return SUCCESS;
 	}
 
-	// ��й�ȣ üũ �׼�
+	// 비밀번호 체크 액션
 	public String checkAction() throws Exception {
 
-		// ��й�ȣ �Է°� �Ķ���� ����.
+		// 비밀번호 입력값 파라미터 설정.
 		paramClass.setNo(getNo());
 		paramClass.setPassword(getPassword());
 
-		// ���� ���� ��й�ȣ ��������.
+		// 현재 글의 비밀번호 가져오기.
 		resultClass = (boardVO) sqlMapper.queryForObject("selectPassword",
 				paramClass);
 
-		// �Է��� ��й�ȣ�� Ʋ���� ERROR ����.
+		// 입력한 비밀번호가 틀리면 ERROR 리턴.
 		if (resultClass == null)
 			return ERROR;
 
